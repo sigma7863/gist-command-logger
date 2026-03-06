@@ -1,50 +1,52 @@
-# gist-command-logger (Go)
+# gist-command-logger
 
-Cross-platform CLI (Go) that records shell commands, filters/redacts them, and uploads to GitHub Gist.
+このリポジトリは **Go 実装** と **TypeScript/Bun 実装** を同居させています。  
+目的は「Go版を主実装として運用しつつ、TS版を比較・参照できるようにする」ことです。
 
-## Why Go
+## 実装の分離
 
-- Single binary distribution for macOS/Linux/Windows
-- No runtime dependency like Node/Bun for end users
-- Stable process + filesystem behavior for CLI tooling
+### Go（主実装）
 
-## Build
+- `cmd/gist-command-logger/` : Go CLIエントリポイント
+- `internal/` : Go本体ロジック（config/filter/gist/hooks など）
+- `go.mod` : Go依存管理
+- `bin/` : Goビルド成果物（生成物）
+
+Go版を使う場合:
 
 ```bash
 go build -o bin/gist-command-logger ./cmd/gist-command-logger
+./bin/gist-command-logger init --shell zsh
 ```
 
-## Install (local)
+### TypeScript/Bun（サブ実装）
+
+- `src/` : TS CLI実装
+- `tests/` : TSテスト
+- `package.json`, `tsconfig.json`, `bun.lock` : TS/Bun設定
+- `dist/` : TSビルド成果物（生成物）
+
+TS版を使う場合:
 
 ```bash
-cp bin/gist-command-logger /usr/local/bin/gist-command-logger
+bun install
+bun run build
+node dist/cli.js init --shell zsh
 ```
 
-## Commands
+## どちらを使うべきか
 
-```bash
-gist-command-logger init --shell zsh --mode daily --visibility secret --timing immediate
-gist-command-logger status
-gist-command-logger auth
-gist-command-logger auth --run
-gist-command-logger run-upload
-```
+- 本番運用・配布前提: **Go版**
+- 検証・比較: TS/Bun版
 
-## Config & State
+## 共通要件
 
-- macOS/Linux config: `~/.config/gist-command-logger/config.json`
-- Windows config: `%APPDATA%\\gist-command-logger\\config.json`
-- macOS/Linux state: `~/.local/state/gist-command-logger/`
-- Windows state: `%LOCALAPPDATA%\\gist-command-logger\\state\\`
+- `gh` (GitHub CLI) が必要
+- `gh auth login -h github.com` で認証
 
-Environment variables:
+## 補助スクリプト
 
-- `GCL_CONFIG_PATH`: override config file path
-- `GCL_HOME`: override home dir (useful in tests)
-- `GCL_GH_BIN`: custom gh binary path (useful in tests)
+- `scripts/install.sh`
+- `scripts/install.ps1`
 
-## Notes
-
-- Requires GitHub CLI (`gh`) and valid auth.
-- Default behavior: collect all commands, then filter before upload.
-- Default gist visibility: `secret`.
+これらは主に TS/Bun 導線用です。Go配布を主軸にする場合は、将来的にGo用導線へ置き換えてください。
